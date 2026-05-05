@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+
+int main() {
+    int pipe1[2], pipe2[2];
+    pid_t pid;
+
+    char input[100], output[200];
+
+    pipe(pipe1); 
+    pipe(pipe2); 
+
+    pid = fork();
+
+    if(pid > 0) {
+        printf("Enter a sentence: ");
+        fgets(input, sizeof(input), stdin);
+
+        write(pipe1[1], input, strlen(input) + 1);
+
+        read(pipe2[0], output, sizeof(output));
+
+        printf("\nResult from child:\n%s\n", output);
+    }
+    else {
+        char buffer[100];
+        read(pipe1[0], buffer, sizeof(buffer));
+
+        int chars = 0, words = 0, lines = 0;
+
+        for(int i = 0; buffer[i] != '\0'; i++) {
+            chars++;
+            if(buffer[i] == ' ')
+                words++;
+            if(buffer[i] == '\n')
+                lines++;
+        }
+
+        words++; 
+        lines++; 
+
+        sprintf(output, "Characters: %d\nWords: %d\nLines: %d\n",
+                chars, words, lines);
+
+        write(pipe2[1], output, strlen(output) + 1);
+    }
+
+    return 0;
+}
